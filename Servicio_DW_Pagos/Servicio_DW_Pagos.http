@@ -1,0 +1,6 @@
+@Servicio_DW_Pagos_HostAddress = http://localhost:5292
+
+GET {{Servicio_DW_Pagos_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
