@@ -1,8 +1,10 @@
-﻿namespace Servicio_DW_Pagos.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Servicio_DW_Pagos.Models
 {
     public class Bitacora
     {
-
+        [Key]
         public int ID_Bitacora { get; set; }
         public int ID_Usuario { get; set; }
         public int ID_Orden { get; set; }

@@ -1,7 +1,10 @@
-﻿namespace Servicio_DW_Pagos.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Servicio_DW_Pagos.Models
 {
     public class Orden_Pago
     {
+        [Key]
         public int ID_Orden { get; set; }
 
         public int ID_Estado { get; set; }
@@ -31,9 +34,8 @@
 
         public decimal Monto_Convertido { get; set; }
 
-        public string Estado {  get; set; } 
 
-        public bool Tipo { get; set; } = false;
+        public bool Prioridad { get; set; }
 
 
 

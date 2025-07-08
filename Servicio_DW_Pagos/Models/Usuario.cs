@@ -1,7 +1,10 @@
-﻿namespace Servicio_DW_Pagos.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Servicio_DW_Pagos.Models
 {
     public class Usuario
     {
+        [Key]
         public int ID_Usuario { get; set; }
         public int ID_Rol { get; set; }
         public string Cedula { get; set; }
