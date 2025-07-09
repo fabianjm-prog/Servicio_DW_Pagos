@@ -12,6 +12,7 @@ builder.Services.AddHttpClient("TipoCambioService", client =>
     client.BaseAddress = new Uri("https://localhost:7109/api/Moneda/"); 
 });
 
+
 builder.Services.AddScoped<ServicioTipoCambio>();
 
 builder.Services.AddControllers();
@@ -22,9 +23,12 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CadenaSQL")));
-
+builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddHttpClient();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSession();
 
 
 var app = builder.Build();
@@ -37,6 +41,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseSession();
 
 app.UseAuthorization();
 
