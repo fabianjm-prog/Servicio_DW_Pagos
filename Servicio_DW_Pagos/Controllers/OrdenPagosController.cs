@@ -81,7 +81,7 @@ namespace Servicio_DW_Pagos.Controllers
 
         public async Task<IActionResult> ListaOrdenes()
         {
-            var listaOrdenes = await _context.Orden_Pago.ToListAsync();
+            var listaOrdenes = await _context.Orden_Pago.ToListAsync(); 
 
             if (listaOrdenes == null || listaOrdenes.Count == 0)
             {
@@ -90,6 +90,9 @@ namespace Servicio_DW_Pagos.Controllers
 
             return StatusCode(StatusCodes.Status200OK, new { value = listaOrdenes });
         }
+
+
+
 
         [HttpDelete]
         [Route("Eliminar/{ID_Orden}")]
