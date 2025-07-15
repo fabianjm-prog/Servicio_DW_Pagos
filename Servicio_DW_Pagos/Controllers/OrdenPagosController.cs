@@ -179,7 +179,8 @@ namespace Servicio_DW_Pagos.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new { mensaje = "Error al actualizar el estado de la orden.", error = ex.Message });
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                return StatusCode(500, new { mensaje = "Error al actualizar el estado de la orden.", error = innerMessage });
             }
         }
 
@@ -193,7 +194,6 @@ namespace Servicio_DW_Pagos.Controllers
                 return Unauthorized(new { mensaje = "Debe iniciar sesión para ver sus órdenes de pago." });
             }
 
-            // Obtener todas las órdenes con relaciones cargadas
             var listaOrdenes = await _context.Orden_Pago
                 .Include(o => o.Moneda)
                 .Include(o => o.TipoPago)
@@ -206,10 +206,8 @@ namespace Servicio_DW_Pagos.Controllers
                 return NotFound(new { mensaje = "No hay órdenes de pago registradas." });
             }
 
-            // Filtrar por usuario
             var ordenesDelUsuario = listaOrdenes.Where(o => o.ID_Usuario == userId);
 
-            // Filtrar por tipo de pago si se especifica
             if (tipoPago.HasValue)
             {
                 ordenesDelUsuario = ordenesDelUsuario.Where(o => o.ID_Tipo_Pago == tipoPago.Value);
