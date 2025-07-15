@@ -78,14 +78,18 @@ namespace Servicio_DW_Pagos.Controllers
 
         [HttpGet]
         [Route("Listar")]
-
         public async Task<IActionResult> ListaOrdenes()
         {
-            var listaOrdenes = await _context.Orden_Pago.ToListAsync();
+            var listaOrdenes = await _context.Orden_Pago
+                .Include(o => o.Moneda)
+                .Include(o => o.TipoPago)
+                .Include(o => o.EstadoOrden)
+                .Include(o => o.Usuario)
+                .ToListAsync();
 
             if (listaOrdenes == null || listaOrdenes.Count == 0)
             {
-                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "No se logro encontrar ninguna Orden de pago" });
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "No se logró encontrar ninguna Orden de pago" });
             }
 
             return StatusCode(StatusCodes.Status200OK, new { value = listaOrdenes });
@@ -149,6 +153,72 @@ namespace Servicio_DW_Pagos.Controllers
             {
                 return StatusCode(500, new { mensaje = "Error al actualizar Orden de pago.", detalle = ex.Message });
             }
+        }
+
+        [HttpPut("CambiarEstadoAEnviada/{id}")]
+        public async Task<IActionResult> CambiarEstadoAEnviada(int id)
+        {
+            var orden = await _context.Orden_Pago.FindAsync(id);
+
+            if (orden == null)
+            {
+                return NotFound(new { mensaje = $"Orden con ID {id} no encontrada." });
+            }
+
+            if (orden.ID_Estado != 1)
+            {
+                return BadRequest(new { mensaje = "La orden no está en estado 'creada' (ID_Estado = 1), por lo tanto no se puede cambiar a 'enviada'." });
+            }
+
+            orden.ID_Estado = 2;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { mensaje = "El estado de la orden ha sido cambiado a 'enviada' correctamente.", orden });
+            }
+            catch (DbUpdateException ex)
+            {
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                return StatusCode(500, new { mensaje = "Error al actualizar el estado de la orden.", error = innerMessage });
+            }
+        }
+
+        [HttpGet("MisOrdenes")]
+        public async Task<IActionResult> MisOrdenes([FromQuery] int? tipoPago)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+
+            if (userId == null)
+            {
+                return Unauthorized(new { mensaje = "Debe iniciar sesión para ver sus órdenes de pago." });
+            }
+
+            var listaOrdenes = await _context.Orden_Pago
+                .Include(o => o.Moneda)
+                .Include(o => o.TipoPago)
+                .Include(o => o.EstadoOrden)
+                .Include(o => o.Usuario)
+                .ToListAsync();
+
+            if (listaOrdenes == null || listaOrdenes.Count == 0)
+            {
+                return NotFound(new { mensaje = "No hay órdenes de pago registradas." });
+            }
+
+            var ordenesDelUsuario = listaOrdenes.Where(o => o.ID_Usuario == userId);
+
+            if (tipoPago.HasValue)
+            {
+                ordenesDelUsuario = ordenesDelUsuario.Where(o => o.ID_Tipo_Pago == tipoPago.Value);
+            }
+
+            if (!ordenesDelUsuario.Any())
+            {
+                return NotFound(new { mensaje = "No se encontraron órdenes para el usuario actual con los filtros aplicados." });
+            }
+
+            return Ok(new { ordenes = ordenesDelUsuario });
         }
 
 
