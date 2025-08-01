@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Servicio_DW_Pagos.Models
 {
@@ -38,16 +39,16 @@ namespace Servicio_DW_Pagos.Models
         public bool Prioridad { get; set; }
 
 
+        [ForeignKey("ID_Estado")]
+        public virtual Estado_Orden EstadoOrden { get; set; }
 
+        [ForeignKey("ID_Usuario")]
+        public virtual Usuario Usuario { get; set; }
 
+        [ForeignKey("ID_Tipo_Pago")]
+        public virtual Tipo_Pagocs TipoPago { get; set; }
 
-
-
-
-
-
-
-
-
+        [ForeignKey("ID_Moneda")]
+        public virtual Moneda Moneda { get; set; }
     }
 }
