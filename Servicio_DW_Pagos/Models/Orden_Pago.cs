@@ -15,7 +15,7 @@ namespace Servicio_DW_Pagos.Models
 
         public DateTime Fecha_Ingreso { get; set; }
         public DateTime Fecha_Factura { get; set; }
-        public DateTime Fecha_Pago { get; set; }
+        public DateTime? Fecha_Pago { get; set; }
         public DateTime Fecha_Vencimiento { get; set; }
         public DateTime Fecha_Revision { get; set; }
 
@@ -39,16 +39,5 @@ namespace Servicio_DW_Pagos.Models
         public bool Prioridad { get; set; }
 
 
-        [ForeignKey("ID_Estado")]
-        public virtual Estado_Orden EstadoOrden { get; set; }
-
-        [ForeignKey("ID_Usuario")]
-        public virtual Usuario Usuario { get; set; }
-
-        [ForeignKey("ID_Tipo_Pago")]
-        public virtual Tipo_Pagocs TipoPago { get; set; }
-
-        [ForeignKey("ID_Moneda")]
-        public virtual Moneda Moneda { get; set; }
     }
 }

@@ -27,29 +27,39 @@ namespace Servicio_DW_Pagos.Controllers
 
         public async Task<IActionResult> Login(Login objeto)
         {
-            var usuarioEncontrado = await _context.Usuario.Where(u => u.Correo == objeto.Correo && u.Contrasena == objeto.Contrasena).FirstOrDefaultAsync();
-
-            if (usuarioEncontrado == null)
+            try
             {
-                return Unauthorized(new { message = "Credenciales incorrectas" });
-            }
 
-            HttpContext.Session.SetInt32("UserId", usuarioEncontrado.ID_Usuario);
-            HttpContext.Session.SetString("UserName", usuarioEncontrado.Nombre);
+                var usuarioEncontrado = await _context.Usuario.Where(u => u.Correo == objeto.Correo && u.Contrasena == objeto.Contrasena).FirstOrDefaultAsync();
 
-            return Ok(new
-            {
-                message = "Inicio de sesión exitoso",
-                usuario = new
+                if (usuarioEncontrado == null)
                 {
-                    Id = usuarioEncontrado.ID_Usuario,
-                    Nombre = usuarioEncontrado.Nombre,
-                    Correo = usuarioEncontrado.Correo
+                    return Unauthorized(new { message = "Credenciales incorrectas" });
                 }
-            });
+
+                HttpContext.Session.SetInt32("UserId", usuarioEncontrado.ID_Usuario);
+                HttpContext.Session.SetString("UserName", usuarioEncontrado.Nombre);
+
+                return Ok(new
+                {
+                    message = "Inicio de sesión exitoso",
+                    usuario = new
+                    {
+                        Id = usuarioEncontrado.ID_Usuario,
+                        nombre = usuarioEncontrado.Nombre,
+                        correo = usuarioEncontrado.Correo,
+                        rol = usuarioEncontrado.ID_Rol
+                    }
+                });
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
+            }
         }
 
-        [HttpGet("Logout")]
+[HttpGet("Logout")]
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();

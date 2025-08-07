@@ -13,6 +13,11 @@ namespace Servicio_DW_Pagos.Models
 
         public DbSet<Tipo_Pagocs> Tipo_Pago { get; set; }
         public DbSet<Usuario> Usuario { get; set; }
+        public DbSet<Devolucion> Devolucion { get; set; }
+
+        public DbSet<Tipo_Devolucion> Tipo_Devolucion { get; set; }
+
+
 
     }
 }

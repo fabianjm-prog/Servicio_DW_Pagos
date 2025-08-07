@@ -38,7 +38,23 @@ namespace Servicio_DW_Pagos.Controllers
             if (tipoCambio == null)
                 return BadRequest(new { mensaje = "No se pudo obtener el tipo de cambio." });
 
-            decimal montoConvertido = ordenDTO.Monto * tipoCambio.Value;
+            decimal descuentoDecimal = ordenDTO.Descuento / 100;
+            decimal impuestoDecimal = ordenDTO.Impuesto / 100;
+
+            decimal montoBase = ordenDTO.Monto;
+
+            if (ordenDTO.Descuento > 0)
+            {
+                montoBase -= montoBase * descuentoDecimal;
+            }
+
+            if (ordenDTO.Impuesto > 0)
+            {
+                montoBase += montoBase * impuestoDecimal;
+            }
+
+            decimal montoConvertido = montoBase * tipoCambio.Value;
+
 
             var orden = new Orden_Pago
             {
@@ -49,12 +65,11 @@ namespace Servicio_DW_Pagos.Controllers
                 Fecha_Ingreso = DateTime.Now,
                 Acreedor = ordenDTO.Acreedor,
                 Numero_Factura = ordenDTO.Numero_Factura,
-                Monto = ordenDTO.Monto,
+                Monto = montoBase,
                 Descuento = ordenDTO.Descuento,
                 Impuesto = ordenDTO.Impuesto,
                 Documento_compensa = ordenDTO.Documento_compensa,
                 Fecha_Factura = ordenDTO.Fecha_Factura,
-                Fecha_Pago = ordenDTO.Fecha_Pago,
                 Fecha_Vencimiento = ordenDTO.Fecha_Vencimiento,
                 Fecha_Revision = ordenDTO.Fecha_Revision,
                 Tipo_Cambio = tipoCambio.Value,
@@ -80,12 +95,7 @@ namespace Servicio_DW_Pagos.Controllers
         [Route("Listar")]
         public async Task<IActionResult> ListaOrdenes()
         {
-            var listaOrdenes = await _context.Orden_Pago
-                .Include(o => o.Moneda)
-                .Include(o => o.TipoPago)
-                .Include(o => o.EstadoOrden)
-                .Include(o => o.Usuario)
-                .ToListAsync();
+            var listaOrdenes = await _context.Orden_Pago.ToListAsync();
 
             if (listaOrdenes == null || listaOrdenes.Count == 0)
             {
@@ -158,6 +168,12 @@ namespace Servicio_DW_Pagos.Controllers
             }
         }
 
+        // --------------------------Crud arriba---------------------------------
+
+
+
+        // --------------------------Coordinador Metodos---------------------------------
+
         [HttpPut("CambiarEstadoAEnviada/{id}")]
         public async Task<IActionResult> CambiarEstadoAEnviada(int id)
         {
@@ -188,20 +204,17 @@ namespace Servicio_DW_Pagos.Controllers
         }
 
         [HttpGet("MisOrdenes")]
-        public async Task<IActionResult> MisOrdenes([FromQuery] int? tipoPago)
-        {
-            var userId = HttpContext.Session.GetInt32("UserId");
+        public async Task<IActionResult> MisOrdenes([FromQuery] int userId, [FromQuery] int? tipoPago)
 
-            if (userId == null)
+        {
+
+            if (userId <= 0)
             {
                 return Unauthorized(new { mensaje = "Debe iniciar sesión para ver sus órdenes de pago." });
             }
 
             var listaOrdenes = await _context.Orden_Pago
-                .Include(o => o.Moneda)
-                .Include(o => o.TipoPago)
-                .Include(o => o.EstadoOrden)
-                .Include(o => o.Usuario)
+            
                 .ToListAsync();
 
             if (listaOrdenes == null || listaOrdenes.Count == 0)
@@ -225,8 +238,190 @@ namespace Servicio_DW_Pagos.Controllers
         }
 
 
-        // aqui recuerde agregar los metodos que necesite para el controlador de Ordenes de Pago 
-        // que estan en el proyecto el el documento. 
-        //adapta todo 
+
+        // --------------------------Analista Metodos---------------------------------
+
+        [HttpGet("MisOrdenesAnalista")]
+        public async Task<IActionResult> MisOrdenesAnalista([FromQuery] int userId, [FromQuery] int? tipoPago)
+
+        {
+
+           
+
+            var listaOrdenes = await _context.Orden_Pago
+
+                .ToListAsync();
+
+            if (listaOrdenes == null || listaOrdenes.Count == 0)
+            {
+                return NotFound(new { mensaje = "No hay órdenes de pago registradas." });
+            }
+
+            var ordenesDelUsuario = listaOrdenes.Where(o => o.ID_Estado == 2);
+
+            if (tipoPago.HasValue)
+            {
+                ordenesDelUsuario = ordenesDelUsuario.Where(o => o.ID_Tipo_Pago == tipoPago.Value);
+            }
+
+            if (!ordenesDelUsuario.Any())
+            {
+                return NotFound(new { mensaje = "No se encontraron órdenes para el usuario actual con los filtros aplicados." });
+            }
+
+            return Ok(new { ordenes = ordenesDelUsuario });
+        }
+
+
+
+
+
+        [HttpPut("CambiarEstadoACreada/{id}")]
+        public async Task<IActionResult> CambiarEstadoACreada(int id, [FromBody] DevolucionDT devolucioon)
+        {
+            var orden = await _context.Orden_Pago.FindAsync(id);
+            var Devolucion = await _context.Devolucion.FindAsync(id);
+
+
+            if (orden == null)
+            {
+                return NotFound(new { mensaje = $"Orden con ID {id} no encontrada." });
+            }
+
+            if (orden.ID_Estado != 2)
+            {
+                return BadRequest(new { mensaje = "La orden no está en estado 'Enviada' (ID_Estado = 2), por lo tanto no se puede cambiar a 'Creada'." });
+            }
+
+            orden.ID_Estado = 1;
+
+            // crear devolucion
+
+            var nuevaDevolucion = new Devolucion
+            {
+                ID_Orden = orden.ID_Orden,
+                ID_Usuario = orden.ID_Usuario,
+                ID_Tipo_Devolucion = devolucioon.ID_Tipo_Devolucion,
+                Fecha_Devolucion = DateTime.Now,
+                Estado = "Pendiente" 
+            };
+            try
+            {
+                // Guardar cambios en Orden y agregar devolución
+                _context.Devolucion.Add(nuevaDevolucion);
+                await _context.SaveChangesAsync();
+               
+
+                return Ok(new
+                {
+                    mensaje = "El estado de la orden ha sido cambiado a 'Creada' y la devolución fue registrada correctamente.",
+                    orden,
+                    devolucion = nuevaDevolucion
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    mensaje = "Error al actualizar la orden o crear la devolución.",
+                    error = ex.InnerException?.Message ?? ex.Message
+                });
+            }
+        }
+
+
+
+
+        [HttpPut("CambiarEstadoAPagada/{id}")]
+        public async Task<IActionResult> CambiarEstadoAPagada(int id)
+        {
+            var orden = await _context.Orden_Pago.FindAsync(id);
+
+            if (orden == null)
+            {
+                return NotFound(new { mensaje = $"Orden con ID {id} no encontrada." });
+            }
+
+            if (orden.ID_Estado != 2)
+            {
+                return BadRequest(new { mensaje = "La orden no está en estado 'Enviada' (ID_Estado = 2), por lo tanto no se puede cambiar a 'Pagada'." });
+            }
+
+            orden.ID_Estado = 3;
+
+            orden.Fecha_Pago = DateTime.Now;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { mensaje = "El estado de la orden ha sido cambiado a 'Pagada' correctamente.", orden });
+            }
+            catch (DbUpdateException ex)
+            {
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                return StatusCode(500, new { mensaje = "Error al actualizar el estado de la orden.", error = innerMessage });
+            }
+        }
+        [HttpGet("EstadisticasPagos")]
+        public async Task<IActionResult> ObtenerEstadisticas()
+        {
+            try
+            {
+                //  Pagos generados coordinador
+                var pagosPorCoordinador = await _context.Orden_Pago
+                    .GroupBy(o => o.ID_Usuario)
+                    .Select(g => new
+                    {
+                        ID_Coordinador = g.Key,
+                        CantidadPagosGenerados = g.Count()
+                    })
+                    .ToListAsync();
+
+                //Pagos revisados analista
+                var pagosRevisadosPorAnalista = await _context.Orden_Pago
+                    .Where(o => o.ID_Estado == 2) 
+                    .GroupBy(o => o.ID_Usuario)
+                    .Select(g => new
+                    {
+                        ID_Analista = g.Key,
+                        CantidadRevisados = g.Count()
+                    })
+                    .ToListAsync();
+
+                //Reportes por tipo de pago
+                var reportesPorTipoPago = await _context.Orden_Pago
+                    .GroupBy(o => o.ID_Tipo_Pago)
+                    .Select(g => new
+                    {
+                        ID_TipoPago = g.Key,
+                        Cantidad = g.Count()
+                    })
+                    .ToListAsync();
+
+                // Cantidad total pagos
+                var pagosRealizados = await _context.Orden_Pago
+                    .CountAsync(o => o.ID_Estado == 3);
+
+                return Ok(new
+                {
+                    PagosPorCoordinador = pagosPorCoordinador,
+                    PagosRevisadosPorAnalista = pagosRevisadosPorAnalista,
+                    ReportesPorTipoPago = reportesPorTipoPago,
+                    TotalPagosRealizados = pagosRealizados
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    mensaje = "Error al obtener estadísticas.",
+                    error = ex.InnerException?.Message ?? ex.Message
+                });
+            }
+        }
+
+
+
+
     }
 }
