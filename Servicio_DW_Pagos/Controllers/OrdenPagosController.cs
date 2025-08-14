@@ -58,6 +58,7 @@ namespace Servicio_DW_Pagos.Controllers
 
             var orden = new Orden_Pago
             {
+
                 ID_Estado = ordenDTO.ID_Estado,
                 ID_Usuario = ordenDTO.ID_Usuario,
                 ID_Tipo_Pago = ordenDTO.ID_Tipo_Pago,
