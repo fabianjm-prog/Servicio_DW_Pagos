@@ -96,7 +96,37 @@ namespace Servicio_DW_Pagos.Controllers
         [Route("Listar")]
         public async Task<IActionResult> ListaOrdenes()
         {
-            var listaOrdenes = await _context.Orden_Pago.ToListAsync();
+            var listaOrdenes = await _context.Orden_Pago
+        .Include(o => o.Estado_Orden)       // Relación con tabla Estado
+        .Include(o => o.Usuario)      // Relación con tabla Usuario
+        .Include(o => o.Tipo_Pagocs)    // Relación con tabla Tipo_Pago
+        .Include(o => o.Moneda)       // Relación con tabla Moneda
+        .Select(o => new {
+            o.ID_Orden,
+            o.ID_Estado,
+            EstadoNombre = o.Estado_Orden.Estado,  
+            o.ID_Usuario,
+            UsuarioNombre = o.Usuario.Nombre,     // Nombre usuario
+            o.ID_Tipo_Pago,
+            TipoPagoNombre = o.Tipo_Pagocs.Descripcion,
+            o.ID_Moneda,
+            MonedaNombre = o.Moneda.Codigo,
+            o.Fecha_Ingreso,
+            o.Fecha_Factura,
+            o.Fecha_Pago,
+            o.Fecha_Vencimiento,
+            o.Fecha_Revision,
+            o.Acreedor,
+            o.Numero_Factura,
+            o.Monto,
+            o.Descuento,
+            o.Impuesto,
+            o.Documento_compensa,
+            o.Tipo_Cambio,
+            o.Monto_Convertido,
+            o.Prioridad
+        })
+        .ToListAsync();
 
             if (listaOrdenes == null || listaOrdenes.Count == 0)
             {
@@ -206,36 +236,58 @@ namespace Servicio_DW_Pagos.Controllers
 
         [HttpGet("MisOrdenes")]
         public async Task<IActionResult> MisOrdenes([FromQuery] int userId, [FromQuery] int? tipoPago)
-
         {
+           
 
-            if (userId <= 0)
-            {
-                return Unauthorized(new { mensaje = "Debe iniciar sesión para ver sus órdenes de pago." });
-            }
-
+            // Traer órdenes del usuario incluyendo las relaciones
             var listaOrdenes = await _context.Orden_Pago
-            
+                .Include(o => o.Estado_Orden)
+                .Include(o => o.Usuario)
+                .Include(o => o.Tipo_Pagocs)
+                .Include(o => o.Moneda)
+                .Where(o => o.ID_Usuario == userId && o.ID_Estado == 1)
+                .AsNoTracking()
                 .ToListAsync();
-
-            if (listaOrdenes == null || listaOrdenes.Count == 0)
-            {
-                return NotFound(new { mensaje = "No hay órdenes de pago registradas." });
-            }
-
-            var ordenesDelUsuario = listaOrdenes.Where(o => o.ID_Usuario == userId);
 
             if (tipoPago.HasValue)
             {
-                ordenesDelUsuario = ordenesDelUsuario.Where(o => o.ID_Tipo_Pago == tipoPago.Value);
+                listaOrdenes = listaOrdenes.Where(o => o.ID_Tipo_Pago == tipoPago.Value).ToList();
             }
 
-            if (!ordenesDelUsuario.Any())
+            if (!listaOrdenes.Any())
             {
                 return NotFound(new { mensaje = "No se encontraron órdenes para el usuario actual con los filtros aplicados." });
             }
 
-            return Ok(new { ordenes = ordenesDelUsuario });
+            // Proyectar los datos que queremos devolver
+            var resultado = listaOrdenes.Select(o => new
+            {
+                o.ID_Orden,
+                o.ID_Estado,
+                EstadoNombre = o.Estado_Orden.Estado,
+                o.ID_Usuario,
+                UsuarioNombre = o.Usuario.Nombre,     // Nombre usuario
+                o.ID_Tipo_Pago,
+                TipoPagoNombre = o.Tipo_Pagocs.Descripcion,
+                o.ID_Moneda,
+                MonedaNombre = o.Moneda.Codigo,
+                o.Fecha_Ingreso,
+                o.Fecha_Factura,
+                o.Fecha_Pago,
+                o.Fecha_Vencimiento,
+                o.Fecha_Revision,
+                o.Acreedor,
+                o.Numero_Factura,
+                o.Monto,
+                o.Descuento,
+                o.Impuesto,
+                o.Documento_compensa,
+                o.Tipo_Cambio,
+                o.Monto_Convertido,
+                o.Prioridad
+            });
+
+            return Ok(new { ordenes = resultado });
         }
 
 
@@ -243,35 +295,59 @@ namespace Servicio_DW_Pagos.Controllers
         // --------------------------Analista Metodos---------------------------------
 
         [HttpGet("MisOrdenesAnalista")]
-        public async Task<IActionResult> MisOrdenesAnalista([FromQuery] int userId, [FromQuery] int? tipoPago)
-
+        public async Task<IActionResult> MisOrdenesAnalista([FromQuery] int? tipoPago)
         {
-
-           
-
+            // Traer órdenes con estado 2 (enviado) incluyendo las relaciones
             var listaOrdenes = await _context.Orden_Pago
-
+                .Include(o => o.Estado_Orden)
+                .Include(o => o.Usuario)
+                .Include(o => o.Tipo_Pagocs)
+                .Include(o => o.Moneda)
+                .Where(o => o.ID_Estado == 2)
+                .AsNoTracking()
                 .ToListAsync();
-
-            if (listaOrdenes == null || listaOrdenes.Count == 0)
-            {
-                return NotFound(new { mensaje = "No hay órdenes de pago registradas." });
-            }
-
-            var ordenesDelUsuario = listaOrdenes.Where(o => o.ID_Estado == 2);
 
             if (tipoPago.HasValue)
             {
-                ordenesDelUsuario = ordenesDelUsuario.Where(o => o.ID_Tipo_Pago == tipoPago.Value);
+                listaOrdenes = listaOrdenes.Where(o => o.ID_Tipo_Pago == tipoPago.Value).ToList();
             }
 
-            if (!ordenesDelUsuario.Any())
+            if (!listaOrdenes.Any())
             {
                 return NotFound(new { mensaje = "No se encontraron órdenes para el usuario actual con los filtros aplicados." });
             }
 
-            return Ok(new { ordenes = ordenesDelUsuario });
+            // Proyectar los datos que queremos devolver
+            var resultado = listaOrdenes.Select(o => new
+            {
+                o.ID_Orden,
+                o.ID_Estado,
+                EstadoNombre = o.Estado_Orden.Estado,
+                o.ID_Usuario,
+                UsuarioNombre = o.Usuario.Nombre,     // Nombre usuario
+                o.ID_Tipo_Pago,
+                TipoPagoNombre = o.Tipo_Pagocs.Descripcion,
+                o.ID_Moneda,
+                MonedaNombre = o.Moneda.Codigo,
+                o.Fecha_Ingreso,
+                o.Fecha_Factura,
+                o.Fecha_Pago,
+                o.Fecha_Vencimiento,
+                o.Fecha_Revision,
+                o.Acreedor,
+                o.Numero_Factura,
+                o.Monto,
+                o.Descuento,
+                o.Impuesto,
+                o.Documento_compensa,
+                o.Tipo_Cambio,
+                o.Monto_Convertido,
+                o.Prioridad
+            });
+
+            return Ok(new { ordenes = resultado });
         }
+
 
 
 

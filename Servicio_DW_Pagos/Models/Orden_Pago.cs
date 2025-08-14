@@ -38,6 +38,16 @@ namespace Servicio_DW_Pagos.Models
 
         public bool Prioridad { get; set; }
 
+        [ForeignKey("ID_Estado")]
+        public virtual Estado_Orden Estado_Orden { get; set; }
+
+        [ForeignKey("ID_Usuario")]
+        public virtual Usuario Usuario { get; set; }
+        [ForeignKey("ID_Tipo_Pago")]
+        public virtual Tipo_Pagocs Tipo_Pagocs { get; set; }
+        [ForeignKey("ID_Moneda")]
+        public virtual Moneda Moneda { get; set; }
+
 
     }
 }
