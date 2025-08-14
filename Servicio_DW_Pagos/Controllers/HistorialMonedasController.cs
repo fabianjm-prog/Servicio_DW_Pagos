@@ -8,12 +8,14 @@ namespace Servicio_DW_Pagos.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-    public class MonedasController : Controller
+    public class HistorialMonedasController : Controller
     {
-        private readonly ServicioTipoCambio _tipoCambioService;
         private readonly AppDbContext _context;
 
-        public MonedasController(AppDbContext context, ServicioTipoCambio tipoCambioService)
+
+        private readonly ServicioTipoCambio _tipoCambioService;
+
+        public HistorialMonedasController(AppDbContext context, ServicioTipoCambio tipoCambioService)
         {
             _context = context;
             _tipoCambioService = tipoCambioService;
@@ -23,17 +25,15 @@ namespace Servicio_DW_Pagos.Controllers
         [Route("Listar")]
         public async Task<IActionResult> ListaOrdenes()
         {
-            var listaMonedas = await _context.Moneda.ToListAsync();
+            var listaMonedas = await _context.Historial_Monedas.ToListAsync();
 
             if (listaMonedas == null || listaMonedas.Count == 0)
             {
-                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "No se logró encontrar ningun usuario" });
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "No se logró encontrar ninguna moneda" });
             }
 
             return StatusCode(StatusCodes.Status200OK, new { value = listaMonedas });
         }
-
-
 
         public IActionResult Index()
         {

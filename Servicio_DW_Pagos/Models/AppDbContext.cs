@@ -17,6 +17,12 @@ namespace Servicio_DW_Pagos.Models
 
         public DbSet<Tipo_Devolucion> Tipo_Devolucion { get; set; }
 
+        public DbSet<Historial_Monedas> Historial_Monedas { get; set; }
+
+
+
+
+
 
 
     }
