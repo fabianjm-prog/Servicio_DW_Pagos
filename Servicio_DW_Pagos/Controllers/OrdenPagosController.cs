@@ -21,7 +21,7 @@ namespace Servicio_DW_Pagos.Controllers
         }
 
         [HttpPost("crear")]
-        public async Task<IActionResult> CrearOrdenPago([FromBody] Orden_Pago ordenDTO)
+        public async Task<IActionResult> CrearOrdenPago([FromBody] OrdenPagoDTO ordenDTO)
         {
 
 
@@ -94,7 +94,7 @@ namespace Servicio_DW_Pagos.Controllers
 
         [HttpGet]
         [Route("Listar")]
-        public async Task<IActionResult> ListaOrdenes()
+        public async Task<IActionResult> ListaOrdenes([FromQuery] int? tipoPago)
         {
             var listaOrdenes = await _context.Orden_Pago
         .Include(o => o.Estado_Orden)       // Relación con tabla Estado
@@ -127,6 +127,11 @@ namespace Servicio_DW_Pagos.Controllers
             o.Prioridad
         })
         .ToListAsync();
+
+            if (tipoPago.HasValue)
+            {
+                listaOrdenes = listaOrdenes.Where(o => o.ID_Tipo_Pago == tipoPago.Value).ToList();
+            }
 
             if (listaOrdenes == null || listaOrdenes.Count == 0)
             {
@@ -367,7 +372,7 @@ namespace Servicio_DW_Pagos.Controllers
 
             if (orden.ID_Estado != 2)
             {
-                return BadRequest(new { mensaje = "La orden no está en estado 'Enviada' (ID_Estado = 2), por lo tanto no se puede cambiar a 'Creada'." });
+                return BadRequest(new { mensaje = "La orden no está en estado 'Enviada' (ID_Estado = 2), no puede ser devuelta" });
             }
 
             orden.ID_Estado = 1;
@@ -391,7 +396,7 @@ namespace Servicio_DW_Pagos.Controllers
 
                 return Ok(new
                 {
-                    mensaje = "El estado de la orden ha sido cambiado a 'Creada' y la devolución fue registrada correctamente.",
+                    mensaje = " la devolución fue registrada correctamente.",
                     orden,
                     devolucion = nuevaDevolucion
                 });

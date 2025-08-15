@@ -36,6 +36,10 @@ namespace Servicio_DW_Pagos.Controllers
                 {
                     return Unauthorized(new { message = "Credenciales incorrectas" });
                 }
+                if (usuarioEncontrado.Estado != "Activo")
+                {
+                    return Unauthorized(new { message = "Cuenta se encuentra inactiva" });
+                }
 
                 HttpContext.Session.SetInt32("UserId", usuarioEncontrado.ID_Usuario);
                 HttpContext.Session.SetString("UserName", usuarioEncontrado.Nombre);
@@ -48,7 +52,9 @@ namespace Servicio_DW_Pagos.Controllers
                         Id = usuarioEncontrado.ID_Usuario,
                         nombre = usuarioEncontrado.Nombre,
                         correo = usuarioEncontrado.Correo,
-                        rol = usuarioEncontrado.ID_Rol
+                        rol = usuarioEncontrado.ID_Rol,
+                        estado = usuarioEncontrado.Estado
+
                     }
                 });
 
