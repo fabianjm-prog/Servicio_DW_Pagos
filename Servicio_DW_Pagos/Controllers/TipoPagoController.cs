@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Servicio_DW_Pagos.Models;
 using Microsoft.EntityFrameworkCore;
-using Servicio_DW_Pagos.Servicios;
+using Servicio_DW_Pagos.Models;
 
 namespace Servicio_DW_Pagos.Controllers
 {
@@ -9,30 +8,52 @@ namespace Servicio_DW_Pagos.Controllers
     [ApiController]
     public class TipoPagoController : Controller
     {
-        private readonly ServicioTipoCambio _tipoCambioService;
         private readonly AppDbContext _context;
+        public TipoPagoController(AppDbContext context) => _context = context;
 
-        public TipoPagoController(AppDbContext context, ServicioTipoCambio tipoCambioService)
+        [HttpGet("Listar")]
+        public async Task<IActionResult> Listar()
         {
-            _context = context;
-            _tipoCambioService = tipoCambioService;
+            var data = await _context.Tipo_Pago.AsNoTracking().ToListAsync();
+            if (data == null || data.Count == 0)
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "No hay tipos de pago" });
+
+            return StatusCode(StatusCodes.Status200OK, new { value = data });
         }
-        [HttpGet]
-        [Route("Listar")]
-        public async Task<IActionResult> ListaOrdenes()
+
+        [HttpPost("Crear")]
+        public async Task<IActionResult> Crear([FromBody] Tipo_Pagocs input)
         {
-            var listarTpago = await _context.Tipo_Pago.ToListAsync();
-
-            if (listarTpago == null || listarTpago.Count == 0)
-            {
-                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "No se logró encontrar ningun usuario" });
-            }
-
-            return StatusCode(StatusCodes.Status200OK, new { value = listarTpago });
+            _context.Tipo_Pago.Add(input);
+            await _context.SaveChangesAsync();
+            return Ok(new { mensaje = "Tipo de pago creado", value = input });
         }
-        public IActionResult Index()
+
+        [HttpPut("Actualizar/{id:int}")]
+        public async Task<IActionResult> Actualizar(int id, [FromBody] Tipo_Pagocs input)
         {
-            return View();
+            var item = await _context.Tipo_Pago.FindAsync(id);
+            if (item is null)
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Tipo de pago no encontrado" });
+
+            item.Descripcion = input.Descripcion;
+            item.Siglas = input.Siglas;
+            item.Estado = input.Estado;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { mensaje = "Tipo de pago actualizado" });
+        }
+
+        [HttpDelete("Eliminar/{id:int}")]
+        public async Task<IActionResult> Eliminar(int id)
+        {
+            var item = await _context.Tipo_Pago.FindAsync(id);
+            if (item is null)
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Tipo de pago no encontrado" });
+
+            _context.Tipo_Pago.Remove(item);
+            await _context.SaveChangesAsync();
+            return Ok(new { mensaje = "Tipo de pago eliminado", value = item });
         }
     }
 }

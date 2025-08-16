@@ -19,6 +19,8 @@ namespace Servicio_DW_Pagos.Models
 
         public DbSet<Historial_Monedas> Historial_Monedas { get; set; }
 
+        public DbSet<Rol> Rol { get; set; }
+
 
 
 

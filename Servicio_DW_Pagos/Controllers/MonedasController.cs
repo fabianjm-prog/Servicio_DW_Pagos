@@ -1,43 +1,93 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Servicio_DW_Pagos.Models;
 using Microsoft.EntityFrameworkCore;
-using Servicio_DW_Pagos.Servicios;
+using Servicio_DW_Pagos.Models;
 
 namespace Servicio_DW_Pagos.Controllers
 {
-
     [Route("api/[controller]")]
     [ApiController]
     public class MonedasController : Controller
     {
-        private readonly ServicioTipoCambio _tipoCambioService;
         private readonly AppDbContext _context;
+        public MonedasController(AppDbContext context) => _context = context;
 
-        public MonedasController(AppDbContext context, ServicioTipoCambio tipoCambioService)
+        [HttpGet("Listar")]
+        public async Task<IActionResult> Listar()
         {
-            _context = context;
-            _tipoCambioService = tipoCambioService;
+            var data = await _context.Moneda.AsNoTracking().ToListAsync();
+            if (data == null || data.Count == 0)
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "No se encontró ninguna moneda" });
+
+            return Ok(new { value = data });
         }
 
-        [HttpGet]
-        [Route("Listar")]
-        public async Task<IActionResult> ListaOrdenes()
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetById(int id)
         {
-            var listaMonedas = await _context.Moneda.ToListAsync();
+            var moneda = await _context.Moneda.FindAsync(id);
+            return moneda is null
+                ? StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Moneda no encontrada" })
+                : Ok(new { value = moneda });
+        }
 
-            if (listaMonedas == null || listaMonedas.Count == 0)
+        [HttpPost("Crear")]
+        public async Task<IActionResult> Crear([FromBody] Moneda input)
+        {
+            _context.Moneda.Add(input);
+            await _context.SaveChangesAsync();
+            return Ok(new { mensaje = "Moneda creada", value = input });
+        }
+
+        [HttpPut("Actualizar/{id:int}")]
+        public async Task<IActionResult> Actualizar(int id, [FromBody] Moneda input)
+        {
+            var moneda = await _context.Moneda.FirstOrDefaultAsync(x => x.ID_Moneda == id);
+            if (moneda is null)
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Moneda no encontrada" });
+
+            var tipoCambioAnterior = moneda.Tipo_Cambio;
+
+            moneda.Codigo = input.Codigo;
+            moneda.Nombre = input.Nombre;
+            moneda.Estado = input.Estado;
+            moneda.Tipo_Cambio = input.Tipo_Cambio;
+
+            try
             {
-                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "No se logró encontrar ningun usuario" });
-            }
+                await _context.SaveChangesAsync();
 
-            return StatusCode(StatusCodes.Status200OK, new { value = listaMonedas });
+                // Si cambió el tipo de cambio, registrar en historial
+                if (tipoCambioAnterior != input.Tipo_Cambio)
+                {
+                    var hist = new Historial_Monedas
+                    {
+                        ID_Moneda = moneda.ID_Moneda,
+                        Codigo = moneda.Codigo,
+                        Tipo_Cambio = input.Tipo_Cambio,
+                        Fecha = DateTime.Now
+                    };
+                    _context.Historial_Monedas.Add(hist);
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(new { mensaje = "Moneda actualizada correctamente." });
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new { mensaje = "Error al actualizar la moneda.", detalle = ex.InnerException?.Message ?? ex.Message });
+            }
         }
 
-
-
-        public IActionResult Index()
+        [HttpDelete("Eliminar/{id:int}")]
+        public async Task<IActionResult> Eliminar(int id)
         {
-            return View();
+            var moneda = await _context.Moneda.FindAsync(id);
+            if (moneda is null)
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Moneda no encontrada" });
+
+            _context.Moneda.Remove(moneda);
+            await _context.SaveChangesAsync();
+            return Ok(new { mensaje = "Moneda eliminada", value = moneda });
         }
     }
 }

@@ -1,56 +1,65 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Servicio_DW_Pagos.Models;
 using Microsoft.EntityFrameworkCore;
-using Servicio_DW_Pagos.Servicios;
+using Servicio_DW_Pagos.Models;
 
 namespace Servicio_DW_Pagos.Controllers
 {
-
     [Route("api/[controller]")]
     [ApiController]
     public class UsuariosController : Controller
     {
-        private readonly ServicioTipoCambio _tipoCambioService;
         private readonly AppDbContext _context;
+        public UsuariosController(AppDbContext context) => _context = context;
 
-        public UsuariosController(AppDbContext context, ServicioTipoCambio tipoCambioService)
+        [HttpGet("Listar")]
+        public async Task<IActionResult> Listar()
         {
-            _context = context;
-            _tipoCambioService = tipoCambioService;
+            var data = await _context.Usuario.AsNoTracking().ToListAsync();
+            if (data == null || data.Count == 0)
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "No hay usuarios" });
+
+            return StatusCode(StatusCodes.Status200OK, new { value = data });
         }
 
-
-        [HttpGet]
-        [Route("Listar")]
-        public async Task<IActionResult> ListaOrdenes()
+        [HttpPost("Crear")]
+        public async Task<IActionResult> Crear([FromBody] Usuario input)
         {
-            var listaUsuarios = await _context.Usuario.ToListAsync();
-
-            if (listaUsuarios == null || listaUsuarios.Count == 0)
-            {
-                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "No se logró encontrar ningun usuario" });
-            }
-
-            return StatusCode(StatusCodes.Status200OK, new { value = listaUsuarios });
+            _context.Usuario.Add(input);
+            await _context.SaveChangesAsync();
+            return Ok(new { mensaje = "Usuario creado", value = input });
         }
 
-
-
-        //----------------crear usuario 
-
-
-        //----------------editar usuario 
-        //----------------Eliminar usuario 
-
-
-
-
-        public IActionResult Index()
+        [HttpPut("Actualizar/{id:int}")]
+        public async Task<IActionResult> Actualizar(int id, [FromBody] Usuario input)
         {
-            return View();
+            var u = await _context.Usuario.FindAsync(id);
+            if (u is null)
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Usuario no encontrado" });
+
+            u.ID_Rol = input.ID_Rol;
+            u.Cedula = input.Cedula;
+            u.Nombre = input.Nombre;
+            u.Apellido1 = input.Apellido1;
+            u.Apellido2 = input.Apellido2;
+            u.Telefono = input.Telefono;
+            u.Correo = input.Correo;
+            u.Contrasena = input.Contrasena; // si luego quieres hash, lo cambiamos
+            u.Estado = input.Estado;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { mensaje = "Usuario actualizado" });
         }
 
+        [HttpDelete("Eliminar/{id:int}")]
+        public async Task<IActionResult> Eliminar(int id)
+        {
+            var u = await _context.Usuario.FindAsync(id);
+            if (u is null)
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Usuario no encontrado" });
 
-
+            _context.Usuario.Remove(u);
+            await _context.SaveChangesAsync();
+            return Ok(new { mensaje = "Usuario eliminado", value = u });
+        }
     }
 }
