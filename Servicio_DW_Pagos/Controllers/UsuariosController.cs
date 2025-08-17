@@ -46,9 +46,17 @@ namespace Servicio_DW_Pagos.Controllers
 
             if (inputdto == null)
             {
-                return BadRequest(new { mensaje = "Los datos del Usuario son inválidos." });
+                return BadRequest(new { mensaje = "Los datos del Usuario son invalidos." });
             }
 
+
+            var existeCorreo = await _context.Usuario
+            .AnyAsync(u => u.Correo == inputdto.Correo);
+
+            if (existeCorreo)
+            {
+                return BadRequest(new { mensaje = "El correo ya esta registrado." });
+            }
             try
             {
                 var Usuario = new Usuario
@@ -69,6 +77,8 @@ namespace Servicio_DW_Pagos.Controllers
 
                 };
 
+                
+
                 _context.Usuario.Add(Usuario);
                 await _context.SaveChangesAsync();
                 return Ok(new { mensaje = "Usuario creado", value = Usuario });
@@ -85,7 +95,7 @@ namespace Servicio_DW_Pagos.Controllers
         }
 
         [HttpPut("Actualizar/{id:int}")]
-        public async Task<IActionResult> Actualizar(int id, [FromBody] Usuario input)
+        public async Task<IActionResult> Actualizar(int id, [FromBody] UsuarioDTO input)
         {
             var u = await _context.Usuario.FindAsync(id);
             if (u is null)

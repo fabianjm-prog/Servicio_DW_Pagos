@@ -9,7 +9,7 @@ namespace Servicio_DW_Pagos.Models
         public int ID_Moneda { get; set; }
         public string Codigo { get; set; }
         public decimal Tipo_Cambio { get; set; }
-        public DateTime? Fecha { get; set; } = DateTime.Now;
+        public DateTime Fecha { get; set; } = DateTime.Now;
 
 
     }
