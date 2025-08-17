@@ -24,9 +24,25 @@ namespace Servicio_DW_Pagos.Controllers
         [HttpPost("Crear")]
         public async Task<IActionResult> Crear([FromBody] Tipo_Devolucion input)
         {
-            _context.Tipo_Devolucion.Add(input);
-            await _context.SaveChangesAsync();
-            return Ok(new { mensaje = "Tipo de devolución creado", value = input });
+
+            if (input == null)
+            {
+                return BadRequest(new { mensaje = "Los datos del Tipo_Devolucion son inválidos." });
+            }
+
+            try
+            {
+                _context.Tipo_Devolucion.Add(input);
+                await _context.SaveChangesAsync();
+                return Ok(new { mensaje = "Tipo Devolucion creada", value = input });
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error al Crear el Tipo Devolucion.", detalle = ex.InnerException?.Message ?? ex.Message });
+            }
+
+
         }
 
         [HttpPut("Actualizar/{id:int}")]
@@ -34,25 +50,50 @@ namespace Servicio_DW_Pagos.Controllers
         {
             var item = await _context.Tipo_Devolucion.FindAsync(id);
             if (item is null)
-                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Tipo de devolución no encontrado" });
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Tipo de Devolucion no encontrado" });
 
             item.Descripcion = input.Descripcion;
             item.Estado = input.Estado;
+            item.Fecha_Creacion = input.Fecha_Creacion;
+
 
             await _context.SaveChangesAsync();
-            return Ok(new { mensaje = "Tipo de devolución actualizado" });
+            return Ok(new { mensaje = "Tipo de Devolucion actualizado" });
         }
+
+
 
         [HttpDelete("Eliminar/{id:int}")]
         public async Task<IActionResult> Eliminar(int id)
         {
-            var item = await _context.Tipo_Devolucion.FindAsync(id);
-            if (item is null)
-                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Tipo de devolución no encontrado" });
 
-            _context.Tipo_Devolucion.Remove(item);
-            await _context.SaveChangesAsync();
-            return Ok(new { mensaje = "Tipo de devolución eliminado", value = item });
+            var moneda = await _context.Tipo_Devolucion.FindAsync(id);
+            if (moneda == null)
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Tipo de Devolucion no encontrada" });
+
+            try
+            {
+                _context.Tipo_Devolucion.Remove(moneda);
+                await _context.SaveChangesAsync();
+                return Ok(new { mensaje = "Tipo de Devolucion eliminada", value = moneda });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error al eliminar el Tipo de Devolucion.", detalle = ex.InnerException?.Message ?? ex.Message });
+            }
+
+
         }
+
+
+
+
+
+
+
+
+        
+
+        
     }
 }

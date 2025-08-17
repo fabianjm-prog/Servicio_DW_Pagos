@@ -24,9 +24,22 @@ namespace Servicio_DW_Pagos.Controllers
         [HttpPost("Crear")]
         public async Task<IActionResult> Crear([FromBody] Tipo_Pagocs input)
         {
-            _context.Tipo_Pago.Add(input);
+
+            if (input == null)
+            {
+                return BadRequest(new { mensaje = "Los datos del Tipo Pago son inválidos." });
+            }
+            try
+            {
+                _context.Tipo_Pago.Add(input);
             await _context.SaveChangesAsync();
             return Ok(new { mensaje = "Tipo de pago creado", value = input });
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error al Crear el Tipo Pago.", detalle = ex.InnerException?.Message ?? ex.Message });
+            }
         }
 
         [HttpPut("Actualizar/{id:int}")]

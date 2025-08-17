@@ -11,6 +11,9 @@ namespace Servicio_DW_Pagos.Controllers
         private readonly AppDbContext _context;
         public RolesController(AppDbContext context) => _context = context;
 
+
+
+
         [HttpGet("Listar")]
         public async Task<IActionResult> Listar()
         {
@@ -24,36 +27,55 @@ namespace Servicio_DW_Pagos.Controllers
         [HttpPost("Crear")]
         public async Task<IActionResult> Crear([FromBody] Rol input)
         {
-            _context.Rol.Add(input);
-            await _context.SaveChangesAsync();
-            return Ok(new { mensaje = "Rol creado", value = input });
+            if (input == null)
+            {
+                return BadRequest(new { mensaje = "Los datos del Rol son inválidos." });
+            }
+
+            var existingRole = await _context.Rol.FirstOrDefaultAsync(r => r.Descripcion == input.Descripcion);
+            if (existingRole != null)
+                return StatusCode(StatusCodes.Status400BadRequest, new { mensaje = "El rol ya existe." });
+
+            try { 
+               
+    
+                _context.Rol.Add(input);
+                await _context.SaveChangesAsync();
+                return Ok(new { mensaje = "Rol creado", value = input });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error al verificar el rol.", detalle = ex.InnerException?.Message ?? ex.Message });
+            }
+            
         }
 
-        public class AsignarRolDto { public int ID_Usuario { get; set; } public int ID_Rol { get; set; } }
-
-        [HttpPost("Asignar")]
-        public async Task<IActionResult> Asignar([FromBody] AsignarRolDto dto)
+        [HttpPut("Actualizar/{id:int}")]
+        public async Task<IActionResult> Actualizar(int id, [FromBody] Rol input)
         {
-            var u = await _context.Usuario.FindAsync(dto.ID_Usuario);
-            var r = await _context.Rol.FindAsync(dto.ID_Rol);
-            if (u is null || r is null)
-                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Usuario o Rol no existe." });
+            var item = await _context.Rol.FindAsync(id);
+            if (item is null)
+                return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Rol no encontrado" });
 
-            u.ID_Rol = r.ID_Rol;
+            item.Descripcion = input.Descripcion;
+           
+
             await _context.SaveChangesAsync();
-            return Ok(new { mensaje = "Rol asignado al usuario" });
+            return Ok(new { mensaje = "Rol actualizado" });
         }
 
         [HttpDelete("Eliminar/{id:int}")]
         public async Task<IActionResult> Eliminar(int id)
         {
-            var r = await _context.Rol.FindAsync(id);
-            if (r is null)
+            var item = await _context.Rol.FindAsync(id);
+            if (item is null)
                 return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Rol no encontrado" });
 
-            _context.Rol.Remove(r);
+            _context.Rol.Remove(item);
             await _context.SaveChangesAsync();
-            return Ok(new { mensaje = "Rol eliminado", value = r });
+            return Ok(new { mensaje = "Rol eliminado", value = item });
         }
+
+
     }
 }

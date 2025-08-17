@@ -227,15 +227,39 @@ namespace Servicio_DW_Pagos.Controllers
 
             orden.ID_Estado = 2;
 
+            var nuevaBitacora = new Bitacora
+            {
+                ID_Orden = orden.ID_Orden,
+                ID_Usuario = orden.ID_Usuario,
+                Tabla = "Orden",
+                Columna = "Estado",
+                Valor_Antes = "Creada",
+                Valor_Despues = "Enviada",
+                Transaccion = "Orden Enviada",
+                Fecha_Mov = DateTime.Now
+            };
+
             try
             {
+                
+                _context.Bitacora.Add(nuevaBitacora);
                 await _context.SaveChangesAsync();
-                return Ok(new { mensaje = "El estado de la orden ha sido cambiado a 'enviada' correctamente.", orden });
+
+
+                return Ok(new
+                {
+                    mensaje = " Orden Enviada",
+                    orden,
+                    Bitacora = nuevaBitacora
+                });
             }
-            catch (DbUpdateException ex)
+            catch (Exception ex)
             {
-                var innerMessage = ex.InnerException?.Message ?? ex.Message;
-                return StatusCode(500, new { mensaje = "Error al actualizar el estado de la orden.", error = innerMessage });
+                return StatusCode(500, new
+                {
+                    mensaje = "Error al actualizar la orden o crear la devolución o Crear la bitacora ",
+                    error = ex.InnerException?.Message ?? ex.Message
+                });
             }
         }
 
@@ -387,16 +411,29 @@ namespace Servicio_DW_Pagos.Controllers
                 Fecha_Devolucion = DateTime.Now,
                 Estado = "Pendiente" 
             };
+            var nuevaBitacora = new Bitacora
+            {
+                ID_Orden = orden.ID_Orden,
+                ID_Usuario = orden.ID_Usuario,
+                Tabla = "Orden",
+                Columna = "Estado",
+                Valor_Antes = "Enviada",
+                Valor_Despues = "Creada",
+                Transaccion = "Orden Devuelta",
+                Fecha_Mov = DateTime.Now
+            };
+
             try
             {
                 // Guardar cambios en Orden y agregar devolución
                 _context.Devolucion.Add(nuevaDevolucion);
+                _context.Bitacora.Add(nuevaBitacora);
                 await _context.SaveChangesAsync();
                
 
                 return Ok(new
                 {
-                    mensaje = " la devolución fue registrada correctamente.",
+                    mensaje = " Orden Devuelta",
                     orden,
                     devolucion = nuevaDevolucion
                 });
@@ -405,7 +442,7 @@ namespace Servicio_DW_Pagos.Controllers
             {
                 return StatusCode(500, new
                 {
-                    mensaje = "Error al actualizar la orden o crear la devolución.",
+                    mensaje = "Error al actualizar la orden o crear la devolución o Crear la bitacora ",
                     error = ex.InnerException?.Message ?? ex.Message
                 });
             }
@@ -433,15 +470,39 @@ namespace Servicio_DW_Pagos.Controllers
 
             orden.Fecha_Pago = DateTime.Now;
 
+            var nuevaBitacora = new Bitacora
+            {
+                ID_Orden = orden.ID_Orden,
+                ID_Usuario = orden.ID_Usuario,
+                Tabla = "Orden",
+                Columna = "Estado",
+                Valor_Antes = "Enviada",
+                Valor_Despues = "Pagada",
+                Transaccion = "Orden Pagada",
+                Fecha_Mov = DateTime.Now
+            };
+
             try
             {
+
+                _context.Bitacora.Add(nuevaBitacora);
                 await _context.SaveChangesAsync();
-                return Ok(new { mensaje = "El estado de la orden ha sido cambiado a 'Pagada' correctamente.", orden });
+
+
+                return Ok(new
+                {
+                    mensaje = "Orden Pagada",
+                    orden,
+                    Bitacora = nuevaBitacora
+                });
             }
-            catch (DbUpdateException ex)
+            catch (Exception ex)
             {
-                var innerMessage = ex.InnerException?.Message ?? ex.Message;
-                return StatusCode(500, new { mensaje = "Error al actualizar el estado de la orden.", error = innerMessage });
+                return StatusCode(500, new
+                {
+                    mensaje = "Error al actualizar la orden o Crear la bitacora ",
+                    error = ex.InnerException?.Message ?? ex.Message
+                });
             }
         }
         [HttpGet("EstadisticasPagos")]

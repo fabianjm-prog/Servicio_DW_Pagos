@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Servicio_DW_Pagos.Models
 {
-    public class Usuario
+    public class UsuarioDTO
     {
+
         [Key]
         public int ID_Usuario { get; set; }
         public int ID_Rol { get; set; }
@@ -18,9 +18,5 @@ namespace Servicio_DW_Pagos.Models
         public string Estado { get; set; }
         public DateTime Fecha_Creacion { get; set; } = DateTime.Now;
 
-
-
-        [ForeignKey("ID_Rol")]
-        public virtual Rol Rol { get; set; }
     }
 }

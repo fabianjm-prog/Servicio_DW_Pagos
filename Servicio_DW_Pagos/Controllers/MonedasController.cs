@@ -33,9 +33,25 @@ namespace Servicio_DW_Pagos.Controllers
         [HttpPost("Crear")]
         public async Task<IActionResult> Crear([FromBody] Moneda input)
         {
-            _context.Moneda.Add(input);
-            await _context.SaveChangesAsync();
-            return Ok(new { mensaje = "Moneda creada", value = input });
+
+            if (input == null)
+            {
+                return BadRequest(new { mensaje = "Los datos de la Moneda son inválidos." });
+            }
+
+            try
+             {
+                _context.Moneda.Add(input);
+                await _context.SaveChangesAsync();
+                return Ok(new { mensaje = "Moneda creada", value = input });
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error al Crear la moneda.", detalle = ex.InnerException?.Message ?? ex.Message });
+            }
+
+            
         }
 
         [HttpPut("Actualizar/{id:int}")]
@@ -56,7 +72,6 @@ namespace Servicio_DW_Pagos.Controllers
             {
                 await _context.SaveChangesAsync();
 
-                // Si cambió el tipo de cambio, registrar en historial
                 if (tipoCambioAnterior != input.Tipo_Cambio)
                 {
                     var hist = new Historial_Monedas
@@ -81,13 +96,23 @@ namespace Servicio_DW_Pagos.Controllers
         [HttpDelete("Eliminar/{id:int}")]
         public async Task<IActionResult> Eliminar(int id)
         {
+
             var moneda = await _context.Moneda.FindAsync(id);
-            if (moneda is null)
+            if (moneda == null)
                 return StatusCode(StatusCodes.Status404NotFound, new { mensaje = "Moneda no encontrada" });
 
-            _context.Moneda.Remove(moneda);
-            await _context.SaveChangesAsync();
-            return Ok(new { mensaje = "Moneda eliminada", value = moneda });
+            try
+            {
+                _context.Moneda.Remove(moneda);
+                await _context.SaveChangesAsync();
+                return Ok(new { mensaje = "Moneda eliminada", value = moneda });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error al eliminar la moneda.", detalle = ex.InnerException?.Message ?? ex.Message });
+            }
+
+           
         }
     }
 }

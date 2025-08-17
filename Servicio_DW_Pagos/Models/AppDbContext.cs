@@ -21,6 +21,9 @@ namespace Servicio_DW_Pagos.Models
 
         public DbSet<Rol> Rol { get; set; }
 
+        public DbSet<Bitacora> Bitacora { get; set; }
+
+
 
 
 

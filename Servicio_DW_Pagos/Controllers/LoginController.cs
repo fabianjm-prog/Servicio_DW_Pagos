@@ -51,6 +51,7 @@ namespace Servicio_DW_Pagos.Controllers
                     {
                         Id = usuarioEncontrado.ID_Usuario,
                         nombre = usuarioEncontrado.Nombre,
+                        apellido = usuarioEncontrado.Apellido1,
                         correo = usuarioEncontrado.Correo,
                         rol = usuarioEncontrado.ID_Rol,
                         estado = usuarioEncontrado.Estado
